@@ -33,6 +33,17 @@ jobs:
             rm -rf temp_unzip
           fi
 
+      - name: Auto Fix ScanFragment Syntax
+        run: |
+          FILE_PATH=$(find . -name "ScanFragment.kt" | head -n 1)
+          if [ -n "$FILE_PATH" ]; then
+            echo "Fixing syntax in $FILE_PATH..."
+            # 清除 140-145 行常见的末尾悬空逗号或语法问题
+            sed -i '140,145s/,\s*)/)/g' "$FILE_PATH" || true
+            sed -i '140,145s/,\s*]/]/g' "$FILE_PATH" || true
+            sed -i '142s/,\s*$//g' "$FILE_PATH" || true
+          fi
+
       - name: Fix Version Catalog & Settings
         run: |
           mkdir -p gradle
@@ -59,14 +70,6 @@ jobs:
           fi
           if [ ! -f "$MIPMAP_DIR/ic_launcher_round.xml" ]; then
             echo "$ICON_XML" > "$MIPMAP_DIR/ic_launcher_round.xml"
-          fi
-
-      - name: Print ScanFragment Content
-        run: |
-          SCAN_FILE=$(find . -name "ScanFragment.kt" | head -n 1)
-          if [ -n "$SCAN_FILE" ]; then
-            echo "Found $SCAN_FILE, printing lines 120-160:"
-            sed -n '120,160p' "$SCAN_FILE"
           fi
 
       - name: Set up JDK 17
