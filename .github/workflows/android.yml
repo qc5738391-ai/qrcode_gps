@@ -33,40 +33,13 @@ jobs:
             rm -rf temp_unzip
           fi
 
-      - name: Setup Version Catalog & Settings
+      - name: Fix Version Catalog & Settings
         run: |
           mkdir -p gradle
-          cat << 'EOF' > gradle/libs.versions.toml
-[versions]
-agp = "8.2.2"
-kotlin = "1.9.22"
-ksp = "1.9.22-1.0.17"
-
-[plugins]
-android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
-EOF
+          printf '[versions]\nagp = "8.2.2"\nkotlin = "1.9.22"\nksp = "1.9.22-1.0.17"\n\n[plugins]\nandroid-application = { id = "com.android.application", version.ref = "agp" }\nkotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }\nksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }\n' > gradle/libs.versions.toml
 
           if [ ! -f "settings.gradle" ] && [ ! -f "settings.gradle.kts" ]; then
-            cat << 'EOF' > settings.gradle.kts
-pluginManagement {
-    repositories {
-        google()
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        google()
-        mavenCentral()
-    }
-}
-rootProject.name = "qrcode_gps"
-include(":app")
-EOF
+            printf 'pluginManagement {\n    repositories {\n        google()\n        mavenCentral()\n        gradlePluginPortal()\n    }\n}\ndependencyResolutionManagement {\n    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)\n    repositories {\n        google()\n        mavenCentral()\n        gradlePluginPortal()\n    }\n}\nrootProject.name = "qrcode_gps"\ninclude(":app")\n' > settings.gradle.kts
           fi
 
       - name: Create Missing App Icons
