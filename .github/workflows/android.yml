@@ -11,14 +11,20 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    # 1. 自动解压上传的 ZIP 包
+    # 1. 自动解压 ZIP 并把所有文件平铺提取到根目录
     - name: Unzip Source Code
       run: |
-        if [ -f *.zip ]; then
+        if ls *.zip 1> /dev/null 2>&1; then
+          echo "Unzipping file..."
           unzip -o *.zip
-          # 如果解压后嵌套了一层同名文件夹，将其文件提取出来
-          if [ -d "FieldQR_Collector_Android_Kotlin_Project" ]; then
-            cp -rn FieldQR_Collector_Android_Kotlin_Project/* . || true
+          # 寻找 gradlew 所在的路径并将所有文件移至当前根目录
+          GRADLEW_PATH=$(find . -maxdepth 3 -name "gradlew" | head -n 1)
+          if [ -n "$GRADLEW_PATH" ]; then
+            PROJECT_DIR=$(dirname "$GRADLEW_PATH")
+            if [ "$PROJECT_DIR" != "." ]; then
+              echo "Moving files from $PROJECT_DIR to root..."
+              cp -r $PROJECT_DIR/* . || true
+            fi
           fi
         fi
 
@@ -45,4 +51,3 @@ jobs:
       with:
         name: app-debug
         path: app/build/outputs/apk/debug/app-debug.apk
-
