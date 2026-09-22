@@ -33,16 +33,6 @@ jobs:
             rm -rf temp_unzip
           fi
 
-      - name: Fix Kotlin Code Syntax Errors
-        run: |
-          SCAN_FILE=$(find . -name "ScanFragment.kt" | head -n 1)
-          if [ -n "$SCAN_FILE" ]; then
-            echo "Found $SCAN_FILE, checking line 140-145..."
-            # 自动修复常见尾部多余逗号或未闭合问题
-            sed -i '140,145s/,\s*)/)/g' "$SCAN_FILE" || true
-            sed -i '140,145s/,\s*]/]/g' "$SCAN_FILE" || true
-          fi
-
       - name: Fix Version Catalog & Settings
         run: |
           mkdir -p gradle
@@ -71,6 +61,14 @@ jobs:
             echo "$ICON_XML" > "$MIPMAP_DIR/ic_launcher_round.xml"
           fi
 
+      - name: Print ScanFragment Context
+        run: |
+          SCAN_FILE=$(find . -name "ScanFragment.kt" | head -n 1)
+          if [ -n "$SCAN_FILE" ]; then
+            echo "=== ScanFragment.kt (Lines 120-160) ==="
+            sed -n '120,160p' "$SCAN_FILE"
+          fi
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -86,9 +84,9 @@ jobs:
         run: |
           if [ -f "gradlew" ]; then
             chmod +x gradlew
-            ./gradlew assembleDebug --no-daemon --stacktrace
+            ./gradlew assembleDebug --no-daemon --info
           else
-            gradle assembleDebug --no-daemon --stacktrace
+            gradle assembleDebug --no-daemon --info
           fi
 
       - name: Upload APK
