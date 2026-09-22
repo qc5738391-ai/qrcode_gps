@@ -39,7 +39,7 @@ jobs:
           printf '[versions]\nagp = "8.2.2"\nkotlin = "1.9.22"\nksp = "1.9.22-1.0.17"\n\n[plugins]\nandroid-application = { id = "com.android.application", version.ref = "agp" }\nkotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }\nksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }\n' > gradle/libs.versions.toml
 
           if [ ! -f "settings.gradle" ] && [ ! -f "settings.gradle.kts" ]; then
-            printf 'pluginManagement {\n    repositories {\n        google()\n        mavenCentral()\n        gradlePluginPortal()\n    }\n}\ndependencyResolutionManagement {\n    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)\n    repositories {\n        google()\n        mavenCentral()\n    }\n}\nrootProject.name = "qrcode_gps"\ninclude(":app")\n' > settings.gradle.kts
+            printf 'pluginManagement {\n    repositories {\n        google()\n        mavenCentral()\n        gradlePluginPortal()\n    }\n}\ndependencyResolutionManagement {\n    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)\n    repositories {\n        google()\n        mavenCentral()\n        gradlePluginPortal()\n    }\n}\nrootProject.name = "qrcode_gps"\ninclude(":app")\n' > settings.gradle.kts
           fi
 
       - name: Create Missing App Icons
@@ -59,6 +59,14 @@ jobs:
           fi
           if [ ! -f "$MIPMAP_DIR/ic_launcher_round.xml" ]; then
             echo "$ICON_XML" > "$MIPMAP_DIR/ic_launcher_round.xml"
+          fi
+
+      - name: Print ScanFragment Content
+        run: |
+          SCAN_FILE=$(find . -name "ScanFragment.kt" | head -n 1)
+          if [ -n "$SCAN_FILE" ]; then
+            echo "Found $SCAN_FILE, printing lines 120-160:"
+            sed -n '120,160p' "$SCAN_FILE"
           fi
 
       - name: Set up JDK 17
