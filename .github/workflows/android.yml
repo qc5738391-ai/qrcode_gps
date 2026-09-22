@@ -15,27 +15,37 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Unzip Source Code
+      - name: Unzip Source Code & Fix Version Catalog
         run: |
           ZIP_FILE=$(find . -maxdepth 1 -name "*.zip" | head -n 1)
           if [ -n "$ZIP_FILE" ]; then
             echo "Unzipping $ZIP_FILE..."
             unzip -o "$ZIP_FILE" -d temp_unzip
 
-            # 寻找包含 settings.gradle 或 settings.gradle.kts 的真正项目根目录
+            # 寻找包含 settings.gradle(.kts) 的真正的项目根目录
             SETTINGS_FILE=$(find temp_unzip -name "settings.gradle*" | head -n 1)
             
             if [ -n "$SETTINGS_FILE" ]; then
               PROJECT_DIR=$(dirname "$SETTINGS_FILE")
               echo "Found Android Root Project at $PROJECT_DIR, moving files..."
-              # 使用 rsync 或 cp 完整复制包括隐藏文件和所有子目录
+              # 递归移动所有文件，包括隐藏文件与子文件夹
               cp -a $PROJECT_DIR/. . || true
             else
               echo "No settings.gradle found, moving top level contents..."
               cp -a temp_unzip/. . || true
             fi
-            
             rm -rf temp_unzip
+          fi
+
+          # 检查并确保 gradle 文件夹及 libs.versions.toml 存在
+          if [ ! -f "gradle/libs.versions.toml" ]; then
+            echo "Warning: gradle/libs.versions.toml missing! Searching in subdirectories..."
+            FOUND_TOML=$(find . -name "libs.versions.toml" | head -n 1)
+            if [ -n "$FOUND_TOML" ]; then
+              mkdir -p gradle
+              cp "$FOUND_TOML" gradle/libs.versions.toml
+              echo "Restored libs.versions.toml to gradle/"
+            fi
           fi
 
       - name: Set up JDK 17
@@ -51,7 +61,6 @@ jobs:
 
       - name: Build Debug APK
         run: |
-          # 优先尝试使用项目自带的 gradlew
           if [ -f "gradlew" ]; then
             chmod +x gradlew
             ./gradlew assembleDebug --stacktrace
