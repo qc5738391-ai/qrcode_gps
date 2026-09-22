@@ -21,14 +21,32 @@ jobs:
           if [ -n "$ZIP_FILE" ]; then
             echo "Unzipping $ZIP_FILE..."
             unzip -o "$ZIP_FILE" -d temp_unzip
-            SETTINGS_FILE=$(find temp_unzip -name "settings.gradle*" | head -n 1)
-            if [ -n "$SETTINGS_FILE" ]; then
-              PROJECT_DIR=$(dirname "$SETTINGS_FILE")
+            
+            # 寻找 settings.gradle 或 build.gradle 所在目录
+            TARGET_FILE=$(find temp_unzip -name "settings.gradle*" -o -name "build.gradle*" | head -n 1)
+            if [ -n "$TARGET_FILE" ]; then
+              PROJECT_DIR=$(dirname "$TARGET_FILE")
+              echo "Moving files from $PROJECT_DIR..."
               cp -a $PROJECT_DIR/. . || true
             else
               cp -a temp_unzip/. . || true
             fi
             rm -rf temp_unzip
+          fi
+
+      - name: Fix Version Catalog & Settings
+        run: |
+          # 1. 补全 Version Catalog (gradle/libs.versions.toml)
+          if [ ! -f "gradle/libs.versions.toml" ]; then
+            echo "Creating gradle/libs.versions.toml..."
+            mkdir -p gradle
+            printf '[versions]\nagp = "8.2.2"\nkotlin = "1.9.22"\nksp = "1.9.22-1.0.17"\n\n[plugins]\nandroid-application = { id = "com.android.application", version.ref = "agp" }\nkotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }\nksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }\n' > gradle/libs.versions.toml
+          fi
+
+          # 2. 确保 settings.gradle.kts 存在且正确链接 app 模块
+          if [ ! -f "settings.gradle" ] && [ ! -f "settings.gradle.kts" ]; then
+            echo "Creating settings.gradle.kts..."
+            printf 'pluginManagement {\n    repositories {\n        google()\n        mavenCentral()\n        gradlePluginPortal()\n    }\n}\ndependencyResolutionManagement {\n    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)\n    repositories {\n        google()\n        mavenCentral()\n    }\n}\nrootProject.name = "qrcode_gps"\ninclude(":app")\n' > settings.gradle.kts
           fi
 
       - name: Set up JDK 17
