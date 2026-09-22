@@ -39,7 +39,7 @@ jobs:
           printf '[versions]\nagp = "8.2.2"\nkotlin = "1.9.22"\nksp = "1.9.22-1.0.17"\n\n[plugins]\nandroid-application = { id = "com.android.application", version.ref = "agp" }\nkotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }\nksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }\n' > gradle/libs.versions.toml
 
           if [ ! -f "settings.gradle" ] && [ ! -f "settings.gradle.kts" ]; then
-            printf 'pluginManagement {\n    repositories {\n        google()\n        mavenCentral()\n        gradlePluginPortal()\n    }\n}\ndependencyResolutionManagement {\n    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)\n    repositories {\n        google()\n        mavenCentral()\n        gradlePluginPortal()\n    }\n}\nrootProject.name = "qrcode_gps"\ninclude(":app")\n' > settings.gradle.kts
+            printf 'pluginManagement {\n    repositories {\n        google()\n        mavenCentral()\n        gradlePluginPortal()\n    }\n}\ndependencyResolutionManagement {\n    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)\n    repositories {\n        google()\n        mavenCentral()\n    }\n}\nrootProject.name = "qrcode_gps"\ninclude(":app")\n' > settings.gradle.kts
           fi
 
       - name: Create Missing App Icons
@@ -74,7 +74,12 @@ jobs:
 
       - name: Build Debug APK
         run: |
-          gradle assembleDebug --no-daemon --stacktrace
+          if [ -f "gradlew" ]; then
+            chmod +x gradlew
+            ./gradlew assembleDebug --no-daemon
+          else
+            gradle assembleDebug --no-daemon
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
