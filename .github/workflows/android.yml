@@ -15,7 +15,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Unzip Source Code & Fix Version Catalog
+      - name: Unzip Source Code
         run: |
           ZIP_FILE=$(find . -maxdepth 1 -name "*.zip" | head -n 1)
           if [ -n "$ZIP_FILE" ]; then
@@ -34,21 +34,20 @@ jobs:
             rm -rf temp_unzip
           fi
 
-          # 如果缺少 gradle/libs.versions.toml，自动补全通用版本库配置
+      - name: Auto Generate Version Catalog
+        run: |
           if [ ! -f "gradle/libs.versions.toml" ]; then
-            echo "gradle/libs.versions.toml not found, generating default config..."
+            echo "gradle/libs.versions.toml missing, creating default catalog..."
             mkdir -p gradle
-            cat << 'EOF' > gradle/libs.versions.toml
-[versions]
-agp = "8.2.2"
-kotlin = "1.9.22"
-ksp = "1.9.22-1.0.17"
-
-[plugins]
-android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
-EOF
+            echo '[versions]' > gradle/libs.versions.toml
+            echo 'agp = "8.2.2"' >> gradle/libs.versions.toml
+            echo 'kotlin = "1.9.22"' >> gradle/libs.versions.toml
+            echo 'ksp = "1.9.22-1.0.17"' >> gradle/libs.versions.toml
+            echo '' >> gradle/libs.versions.toml
+            echo '[plugins]' >> gradle/libs.versions.toml
+            echo 'android-application = { id = "com.android.application", version.ref = "agp" }' >> gradle/libs.versions.toml
+            echo 'kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }' >> gradle/libs.versions.toml
+            echo 'ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }' >> gradle/libs.versions.toml
           fi
 
       - name: Set up JDK 17
