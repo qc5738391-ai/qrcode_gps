@@ -22,15 +22,19 @@ jobs:
             echo "Unzipping $ZIP_FILE..."
             unzip -o "$ZIP_FILE" -d temp_unzip
 
+            # 寻找包含 settings.gradle 或 settings.gradle.kts 的真正项目根目录
             SETTINGS_FILE=$(find temp_unzip -name "settings.gradle*" | head -n 1)
+            
             if [ -n "$SETTINGS_FILE" ]; then
               PROJECT_DIR=$(dirname "$SETTINGS_FILE")
               echo "Found Android Root Project at $PROJECT_DIR, moving files..."
-              cp -r $PROJECT_DIR/* . || true
-              cp -r $PROJECT_DIR/.* . || true
+              # 使用 rsync 或 cp 完整复制包括隐藏文件和所有子目录
+              cp -a $PROJECT_DIR/. . || true
             else
-              cp -r temp_unzip/* . || true
+              echo "No settings.gradle found, moving top level contents..."
+              cp -a temp_unzip/. . || true
             fi
+            
             rm -rf temp_unzip
           fi
 
@@ -43,13 +47,21 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
-          gradle-version: wrapper
+          gradle-version: '8.5'
 
       - name: Build Debug APK
         run: |
-          if [ ! -f "gradlew" ]; then
-            echo "gradlew wrapper not found, generating wrapper..."
-            gradle wrapper
+          # 优先尝试使用项目自带的 gradlew
+          if [ -f "gradlew" ]; then
+            chmod +x gradlew
+            ./gradlew assembleDebug --stacktrace
+          else
+            echo "gradlew missing, using system gradle 8.5..."
+            gradle assembleDebug --stacktrace
           fi
-          chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
