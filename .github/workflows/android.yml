@@ -22,10 +22,13 @@ jobs:
           if [ -n "$ZIP_FILE" ]; then
             echo "Unzipping $ZIP_FILE..."
             unzip -o "$ZIP_FILE" -d temp_unzip
-            # 如果解压出来只有一层顶层目录，将其内部文件移动到当前根目录
-            if [ $(ls -A temp_unzip | wc -l) -eq 1 ] && [ -d temp_unzip/* ]; then
-              cp -r temp_unzip/*/* . || true
-              cp -r temp_unzip/*/. . || true
+            # 搜索 gradlew 所在位置并提取项目文件到根目录
+            GRADLEW_PATH=$(find temp_unzip -name "gradlew" | head -n 1)
+            if [ -n "$GRADLEW_PATH" ]; then
+              PROJECT_DIR=$(dirname "$GRADLEW_PATH")
+              echo "Found project at $PROJECT_DIR, moving to root..."
+              cp -r $PROJECT_DIR/* . || true
+              cp -r $PROJECT_DIR/.* . || true
             else
               cp -r temp_unzip/* . || true
             fi
@@ -41,18 +44,10 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Auto Generation and Fix Permissions for Gradle Wrapper
-        run: |
-          # 如果解压后的项目中缺失 gradlew 脚本，自动生成它
-          if [ ! -f "gradlew" ]; then
-            echo "gradlew not found, generating wrapper..."
-            gradle wrapper
-          fi
-          # 赋予可执行权限
-          chmod +x gradlew
-
       - name: Build Debug APK
-        run: ./gradlew assembleDebug
+        run: |
+          chmod +x gradlew || true
+          ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
