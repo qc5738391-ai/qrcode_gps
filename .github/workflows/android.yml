@@ -33,22 +33,15 @@ jobs:
             rm -rf temp_unzip
           fi
 
-      - name: Fix Version Catalog & Settings
+      - name: Ensure Settings Exists
         run: |
-          if [ ! -f "gradle/libs.versions.toml" ]; then
-            echo "Creating gradle/libs.versions.toml..."
-            mkdir -p gradle
-            printf '[versions]\nagp = "8.2.2"\nkotlin = "1.9.22"\nksp = "1.9.22-1.0.17"\n\n[plugins]\nandroid-application = { id = "com.android.application", version.ref = "agp" }\nkotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }\nksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }\n' > gradle/libs.versions.toml
-          fi
-
           if [ ! -f "settings.gradle" ] && [ ! -f "settings.gradle.kts" ]; then
-            echo "Creating settings.gradle.kts..."
+            echo "Creating fallback settings.gradle.kts..."
             printf 'pluginManagement {\n    repositories {\n        google()\n        mavenCentral()\n        gradlePluginPortal()\n    }\n}\ndependencyResolutionManagement {\n    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)\n    repositories {\n        google()\n        mavenCentral()\n    }\n}\nrootProject.name = "qrcode_gps"\ninclude(":app")\n' > settings.gradle.kts
           fi
 
       - name: Create Missing App Icons
         run: |
-          # 寻找 app/src/main/res 路径
           RES_DIR=$(find . -maxdepth 5 -type d -path "*/src/main/res" | head -n 1)
           if [ -z "$RES_DIR" ]; then
             RES_DIR="app/src/main/res"
@@ -57,7 +50,6 @@ jobs:
           MIPMAP_DIR="$RES_DIR/mipmap-anydpi-v26"
           mkdir -p "$MIPMAP_DIR"
 
-          # 自动生成极简默认图标 XML
           ICON_XML='<?xml version="1.0" encoding="utf-8"?><adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@android:color/white"/><foreground android:drawable="@android:color/black"/></adaptive-icon>'
 
           if [ ! -f "$MIPMAP_DIR/ic_launcher.xml" ]; then
