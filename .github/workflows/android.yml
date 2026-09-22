@@ -46,6 +46,27 @@ jobs:
             printf 'pluginManagement {\n    repositories {\n        google()\n        mavenCentral()\n        gradlePluginPortal()\n    }\n}\ndependencyResolutionManagement {\n    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)\n    repositories {\n        google()\n        mavenCentral()\n    }\n}\nrootProject.name = "qrcode_gps"\ninclude(":app")\n' > settings.gradle.kts
           fi
 
+      - name: Create Missing App Icons
+        run: |
+          # 寻找 app/src/main/res 路径
+          RES_DIR=$(find . -maxdepth 5 -type d -path "*/src/main/res" | head -n 1)
+          if [ -z "$RES_DIR" ]; then
+            RES_DIR="app/src/main/res"
+          fi
+          
+          MIPMAP_DIR="$RES_DIR/mipmap-anydpi-v26"
+          mkdir -p "$MIPMAP_DIR"
+
+          # 自动生成极简默认图标 XML
+          ICON_XML='<?xml version="1.0" encoding="utf-8"?><adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@android:color/white"/><foreground android:drawable="@android:color/black"/></adaptive-icon>'
+
+          if [ ! -f "$MIPMAP_DIR/ic_launcher.xml" ]; then
+            echo "$ICON_XML" > "$MIPMAP_DIR/ic_launcher.xml"
+          fi
+          if [ ! -f "$MIPMAP_DIR/ic_launcher_round.xml" ]; then
+            echo "$ICON_XML" > "$MIPMAP_DIR/ic_launcher_round.xml"
+          fi
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
