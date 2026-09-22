@@ -22,11 +22,11 @@ jobs:
           if [ -n "$ZIP_FILE" ]; then
             echo "Unzipping $ZIP_FILE..."
             unzip -o "$ZIP_FILE" -d temp_unzip
-            # 搜索 gradlew 所在位置并提取项目文件到根目录
-            GRADLEW_PATH=$(find temp_unzip -name "gradlew" | head -n 1)
-            if [ -n "$GRADLEW_PATH" ]; then
-              PROJECT_DIR=$(dirname "$GRADLEW_PATH")
-              echo "Found project at $PROJECT_DIR, moving to root..."
+            # 寻找 build.gradle 或 build.gradle.kts 所在的目录作为项目根目录
+            BUILD_FILE=$(find temp_unzip -name "build.gradle*" | head -n 1)
+            if [ -n "$BUILD_FILE" ]; then
+              PROJECT_DIR=$(dirname "$BUILD_FILE")
+              echo "Found Android project at $PROJECT_DIR, moving files..."
               cp -r $PROJECT_DIR/* . || true
               cp -r $PROJECT_DIR/.* . || true
             else
@@ -46,8 +46,14 @@ jobs:
 
       - name: Build Debug APK
         run: |
-          chmod +x gradlew || true
-          ./gradlew assembleDebug --stacktrace
+          # 如果存在 gradlew 就优先用 gradlew，否则直接用系统安装的 gradle 进行打包
+          if [ -f "gradlew" ]; then
+            chmod +x gradlew
+            ./gradlew assembleDebug --stacktrace
+          else
+            echo "gradlew missing, using system gradle instead..."
+            gradle assembleDebug --stacktrace
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
