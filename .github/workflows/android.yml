@@ -33,10 +33,20 @@ jobs:
             rm -rf temp_unzip
           fi
 
+      - name: Fix Kotlin Code Syntax Errors
+        run: |
+          SCAN_FILE=$(find . -name "ScanFragment.kt" | head -n 1)
+          if [ -n "$SCAN_FILE" ]; then
+            echo "Found $SCAN_FILE, checking line 140-145..."
+            # 自动修复常见尾部多余逗号或未闭合问题
+            sed -i '140,145s/,\s*)/)/g' "$SCAN_FILE" || true
+            sed -i '140,145s/,\s*]/]/g' "$SCAN_FILE" || true
+          fi
+
       - name: Fix Version Catalog & Settings
         run: |
           mkdir -p gradle
-          printf '[versions]\nagp = "8.1.4"\nkotlin = "1.9.0"\nksp = "1.9.0-1.0.13"\n\n[plugins]\nandroid-application = { id = "com.android.application", version.ref = "agp" }\nkotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }\nksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }\n' > gradle/libs.versions.toml
+          printf '[versions]\nagp = "8.2.2"\nkotlin = "1.9.22"\nksp = "1.9.22-1.0.17"\n\n[plugins]\nandroid-application = { id = "com.android.application", version.ref = "agp" }\nkotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }\nksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }\n' > gradle/libs.versions.toml
 
           if [ ! -f "settings.gradle" ] && [ ! -f "settings.gradle.kts" ]; then
             printf 'pluginManagement {\n    repositories {\n        google()\n        mavenCentral()\n        gradlePluginPortal()\n    }\n}\ndependencyResolutionManagement {\n    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)\n    repositories {\n        google()\n        mavenCentral()\n        gradlePluginPortal()\n    }\n}\nrootProject.name = "qrcode_gps"\ninclude(":app")\n' > settings.gradle.kts
@@ -67,18 +77,18 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Compatible Gradle 8.1.1
+      - name: Setup Compatible Gradle 8.2
         uses: gradle/actions/setup-gradle@v3
         with:
-          gradle-version: '8.1.1'
+          gradle-version: '8.2'
 
       - name: Build Debug APK
         run: |
           if [ -f "gradlew" ]; then
             chmod +x gradlew
-            ./gradlew assembleDebug --no-daemon --stacktrace || ./gradlew assembleDebug -x kspDebugKotlin --no-daemon
+            ./gradlew assembleDebug --no-daemon --stacktrace
           else
-            gradle assembleDebug --no-daemon --stacktrace || gradle assembleDebug -x kspDebugKotlin --no-daemon
+            gradle assembleDebug --no-daemon --stacktrace
           fi
 
       - name: Upload APK
